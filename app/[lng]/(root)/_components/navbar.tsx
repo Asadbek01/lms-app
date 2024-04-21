@@ -8,8 +8,8 @@ import { LogIn, ShoppingCart } from 'lucide-react'
 import Link from 'next/link'
 import GlobalSearch from './global-search'
 import LanguageDropdown from '@/components/shared/language-dropdown'
-import { SignInButton, SignedIn, SignedOut } from '@clerk/nextjs'
-import UserBox from '@/components/shared/user-box'
+import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs'
+// import UserBox from '@/components/shared/user-box'
 import useTranslate from '@/hooks/use-translate'
 import Mobile from './mobile'
 import { useParams, usePathname } from 'next/navigation'
@@ -72,7 +72,7 @@ function Navbar() {
 						<ModeToggle />
 					</div>
 					<SignedIn>
-						<UserBox />
+						<UserButton />
 					</SignedIn>
 					<SignedOut>
 						<SignInButton mode='modal'>
