@@ -25,6 +25,7 @@ export const createUser = async (data: ICreateUser) => {
 		}
 
 		const newUser = User.create(data)
+		console.log(newUser)
 
 		return newUser
 	} catch (error) {

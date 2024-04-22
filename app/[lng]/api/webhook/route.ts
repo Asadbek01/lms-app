@@ -2,8 +2,6 @@
 import { sendNotification } from '@/actions/notification.action'
 import { createUser, updateUser } from '@/actions/user.action'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import { headers } from 'next/headers'
-import { NextResponse } from 'next/server'
 import { Webhook } from 'svix'
 
 export async function POST(req: Request) {
@@ -15,17 +13,6 @@ export async function POST(req: Request) {
 		)
 	}
 
-	const headerPayload = headers()
-	const svixId = headerPayload.get('svix-id')
-	const svixTimestamp = headerPayload.get('svix-timestamp')
-	const svixSignature = headerPayload.get('svix-signature')
-
-	if (!svixId || !svixTimestamp || !svixSignature) {
-		return new Response('Error occured -- no svix headers', {
-			status: 400,
-		})
-	}
-
 	const payload = await req.json()
 	const body = JSON.stringify(payload)
 
@@ -34,14 +21,10 @@ export async function POST(req: Request) {
 	let evt: WebhookEvent
 
 	try {
-		evt = wh.verify(body, {
-			'svix-id': svixId,
-			'svix-timestamp': svixTimestamp,
-			'svix-signature': svixSignature,
-		}) as WebhookEvent
+		evt = wh.parse(body) as WebhookEvent
 	} catch (err) {
-		console.error('Error verifying webhook:', err)
-		return new Response('Error occured', {
+		console.error('Error parsing webhook:', err)
+		return new Response('Error occurred', {
 			status: 400,
 		})
 	}
@@ -60,12 +43,15 @@ export async function POST(req: Request) {
 
 		await sendNotification(id, 'messageWelcome')
 
-		return NextResponse.json({ message: 'OK', user })
+		return new Response(JSON.stringify({ message: 'OK', user }), {
+			status: 200,
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
 	}
 
 	if (eventType === 'user.updated') {
-		console.log(evt.data, 'data')
-
 		const { id, email_addresses, image_url, first_name, last_name } = evt.data
 
 		const user = await updateUser({
@@ -79,6 +65,15 @@ export async function POST(req: Request) {
 
 		await sendNotification(id, 'messageProfileUpdated')
 
-		return NextResponse.json({ message: 'OK', user })
+		return new Response(JSON.stringify({ message: 'OK', user }), {
+			status: 200,
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
 	}
+
+	return new Response('Unhandled event type', {
+		status: 400,
+	})
 }
